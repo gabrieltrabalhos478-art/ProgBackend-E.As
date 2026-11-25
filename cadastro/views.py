@@ -1,5 +1,6 @@
 from django.shortcuts import redirect, render
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .forms import ProdutoForm
 from .models import Aluno, Curso, Produto, Usuario
@@ -42,8 +43,9 @@ def produto_new(request):
     return render(request, 'cadastro/produto_form.html', {'form': form})
 
 
-# View da API REST (DRF) que retorna todos os usuários em formato JSON (EA 3)
+# View da API REST (DRF) protegida por autenticação JWT (EA 3)
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def listar_usuarios_api(request):
     usuarios = Usuario.objects.all().order_by('id')
     serializer = UsuarioSerializer(usuarios, many=True)
