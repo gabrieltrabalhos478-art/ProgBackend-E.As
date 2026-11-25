@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastrar Produto{% endblock %}
+
+{% block content %}
+    <h1>Cadastrar Novo Produto</h1>
+
+    <div class="card">
+        <form method="post">
+            <!-- Token de segurança obrigatório do Django para requisições POST -->
+            {% csrf_token %}
+
+            <!-- Renderiza os campos do ProdutoForm -->
+            {{ form.as_p }}
+
+            <button type="submit">Salvar Produto</button>
+        </form>
+    </div>
+{% endblock %}

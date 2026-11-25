@@ -1,5 +1,6 @@
-from django.shortcuts import render
-from .models import Aluno, Curso
+from django.shortcuts import redirect, render
+from .forms import ProdutoForm
+from .models import Aluno, Curso, Produto
 
 
 # View para listar todos os alunos e os cursos em que estão matriculados
@@ -14,3 +15,25 @@ def listar_cursos(request):
     # prefetch_related otimiza a consulta dos alunos de cada curso
     cursos = Curso.objects.prefetch_related('alunos').all()
     return render(request, 'cadastro/cursos.html', {'cursos': cursos})
+
+
+# View para listar os produtos cadastrados (sem precisar do Django Admin)
+def listar_produtos(request):
+    produtos = Produto.objects.all().order_by('-id')
+    return render(request, 'cadastro/produtos.html', {'produtos': produtos})
+
+
+# View para cadastrar um novo produto usando ProdutoForm
+def produto_new(request):
+    if request.method == 'POST':
+        # Preenche o formulário com os dados enviados pelo usuário
+        form = ProdutoForm(request.POST)
+        if form.is_valid():
+            # Salva no banco e redireciona para a listagem de produtos
+            form.save()
+            return redirect('listar_produtos')
+    else:
+        # Em requisições GET, exibe o formulário vazio
+        form = ProdutoForm()
+
+    return render(request, 'cadastro/produto_form.html', {'form': form})

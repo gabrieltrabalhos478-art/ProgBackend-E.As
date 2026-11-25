@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Produtos{% endblock %}
+
+{% block content %}
+    <h1>Produtos Cadastrados</h1>
+    <p><a href="{% url 'produto_new' %}">+ Cadastrar novo produto</a></p>
+
+    {% for produto in produtos %}
+        <div class="card">
+            <h2>{{ produto.nome }}</h2>
+            <p>{{ produto.descricao }}</p>
+            <p><strong>Preço:</strong> R$ {{ produto.preco }}</p>
+            <p><strong>Validade:</strong> {{ produto.validade|date:"d/m/Y" }}</p>
+        </div>
+    {% empty %}
+        <p class="vazio">Nenhum produto cadastrado até o momento.</p>
+    {% endfor %}
+{% endblock %}
