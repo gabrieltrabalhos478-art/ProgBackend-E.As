@@ -1,6 +1,9 @@
 from django.shortcuts import redirect, render
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 from .forms import ProdutoForm
-from .models import Aluno, Curso, Produto
+from .models import Aluno, Curso, Produto, Usuario
+from .serializers import UsuarioSerializer
 
 
 # View para listar todos os alunos e os cursos em que estão matriculados
@@ -37,3 +40,11 @@ def produto_new(request):
         form = ProdutoForm()
 
     return render(request, 'cadastro/produto_form.html', {'form': form})
+
+
+# View da API REST (DRF) que retorna todos os usuários em formato JSON (EA 3)
+@api_view(['GET'])
+def listar_usuarios_api(request):
+    usuarios = Usuario.objects.all().order_by('id')
+    serializer = UsuarioSerializer(usuarios, many=True)
+    return Response(serializer.data)

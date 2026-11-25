@@ -36,3 +36,13 @@ class Produto(models.Model):
     def __str__(self):
         # Mostra o nome do produto
         return self.nome
+
+
+# Model que representa um usuário para a API REST (EA 3)
+class Usuario(models.Model):
+    nome = models.CharField(max_length=100)
+    email = models.EmailField(unique=True)
+
+    def __str__(self):
+        # Mostra o nome e o e-mail do usuário
+        return f"{self.nome} ({self.email})"
