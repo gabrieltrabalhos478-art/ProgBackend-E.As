@@ -61,7 +61,9 @@ E.A1/
 | `/cursos/` | `cadastro.views.listar_cursos` | HTML | Lista todos os cursos e os alunos matriculados. |
 | `/produtos/` | `cadastro.views.listar_produtos` | HTML | Lista todos os produtos cadastrados. |
 | `/produtos/novo/` | `cadastro.views.produto_new` | HTML | Exibe e processa o `ProdutoForm` (sem Django Admin). |
-| `/api/usuarios/` | `cadastro.views.listar_usuarios_api` | JSON (DRF) | Retorna os usuários cadastrados (`Carlos` e `João`) em JSON. |
+| `/api/token/` | `TokenObtainPairView` | JSON (JWT) | Recebe `username` e `password` (`POST`) e devolve `access` e `refresh`. |
+| `/api/token/refresh/` | `TokenRefreshView` | JSON (JWT) | Recebe `refresh` (`POST`) e devolve um novo `access` token. |
+| `/api/usuarios/` | `cadastro.views.listar_usuarios_api` | JSON (DRF) | Rota protegida (`IsAuthenticated`) que retorna os usuários em JSON. |
 | `/admin/` | `admin.site.urls` | HTML | Painel administrativo do Django. |
 
 ---
@@ -111,7 +113,14 @@ python manage.py check
 python manage.py migrate
 ```
 
-### 5. Iniciar o servidor de desenvolvimento
+### 5. Criar um superusuário de teste (para gerar tokens JWT e acessar o Admin)
+
+```bash
+python manage.py createsuperuser
+```
+*(Informe um `username`, um e-mail opcional e uma senha de sua escolha; não salve senhas reais no repositório.)*
+
+### 6. Iniciar o servidor de desenvolvimento
 
 ```bash
 python manage.py runserver
@@ -122,5 +131,51 @@ Acesse no navegador:
 - Cursos: `http://127.0.0.1:8000/cursos/`
 - Produtos: `http://127.0.0.1:8000/produtos/`
 - Cadastrar Produto: `http://127.0.0.1:8000/produtos/novo/`
-- API Usuários (JSON): `http://127.0.0.1:8000/api/usuarios/`
+- API Usuários (JSON, protegida por JWT): `http://127.0.0.1:8000/api/usuarios/`
 - Admin: `http://127.0.0.1:8000/admin/`
+
+---
+
+## Testando a Autenticação JWT com `curl`
+
+Com o servidor rodando em `http://127.0.0.1:8000`:
+
+### 1. Chamar `/api/usuarios/` sem token (retorna erro 401)
+
+```bash
+curl -i http://127.0.0.1:8000/api/usuarios/
+```
+Resposta esperada:
+```text
+HTTP/1.1 401 Unauthorized
+{"detail":"Authentication credentials were not provided."}
+```
+
+### 2. Obter os tokens (`access` e `refresh`) em `/api/token/`
+
+Substitua `<SEU_USUARIO>` e `<SUA_SENHA>` pelo superusuário criado no passo 5:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/token/ ^
+  -H "Content-Type: application/json" ^
+  -d "{\"username\": \"<SEU_USUARIO>\", \"password\": \"<SUA_SENHA>\"}"
+```
+*(Em Linux/macOS ou Git Bash, use `\` no lugar de `^` e aspas simples `'{...}'`.)*
+
+### 3. Chamar `/api/usuarios/` com o cabeçalho `Authorization: Bearer <token>`
+
+```bash
+curl -H "Authorization: Bearer <SEU_ACCESS_TOKEN>" http://127.0.0.1:8000/api/usuarios/
+```
+Resposta esperada (`200 OK`):
+```json
+[{"id":1,"nome":"Carlos","email":"carlos@email.com"},{"id":2,"nome":"João","email":"joao@email.com"}]
+```
+
+### 4. Renovar o `access` token em `/api/token/refresh/`
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/token/refresh/ ^
+  -H "Content-Type: application/json" ^
+  -d "{\"refresh\": \"<SEU_REFRESH_TOKEN>\"}"
+```
