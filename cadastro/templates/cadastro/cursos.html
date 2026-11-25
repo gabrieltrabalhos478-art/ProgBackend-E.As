@@ -1,0 +1,26 @@
+{% extends 'cadastro/base.html' %}
+
+{% block title %}Lista de Cursos{% endblock %}
+
+{% block content %}
+    <h1>Cursos Disponíveis</h1>
+
+    {% for curso in cursos %}
+        <div class="card">
+            <h2>{{ curso.titulo }}</h2>
+            <p>{{ curso.descricao }}</p>
+
+            <!-- Exibe os alunos matriculados neste curso (via related_name='alunos') -->
+            <p><strong>Alunos matriculados:</strong></p>
+            <ul>
+                {% for aluno in curso.alunos.all %}
+                    <li>{{ aluno.nome }} {{ aluno.sobrenome }} ({{ aluno.email }})</li>
+                {% empty %}
+                    <li class="vazio">Nenhum aluno matriculado neste curso.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% empty %}
+        <p class="vazio">Nenhum curso cadastrado até o momento.</p>
+    {% endfor %}
+{% endblock %}
