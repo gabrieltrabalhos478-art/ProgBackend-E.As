@@ -1,6 +1,8 @@
-# Sistema de Cadastro de Alunos e Cursos (EA 1)
+# Sistema de Cadastro de Alunos, Cursos e Produtos (EA 1 e EA 2)
 
-Projeto Django desenvolvido para a atividade **EA 1** (Arquitetura de Sistemas), implementando um sistema simples de cadastro de **alunos** e **cursos** com relacionamento **muitos-para-muitos (N:N)** — um aluno pode estar matriculado em vários cursos e um curso pode ter vários alunos.
+Projeto Django desenvolvido para as atividades **EA 1** e **EA 2** (Arquitetura de Sistemas), implementando:
+- **EA 1:** Cadastro de **alunos** e **cursos** com relacionamento **muitos-para-muitos (N:N)** via Django Admin e listagem pública.
+- **EA 2:** Cadastro de **produtos** com **ModelForm (`ProdutoForm`)** e view `produto_new` funcionando de forma independente, **sem precisar do Django Admin**.
 
 ---
 
@@ -20,22 +22,26 @@ E.A1/
 │   ├── settings.py                   # Configurações (INSTALLED_APPS, pt-br, America/Maceio, SQLite)
 │   └── urls.py                       # Roteamento raiz (/admin/ e inclusão de cadastro.urls)
 │
-└── cadastro/                         # App responsável pelo domínio de Alunos e Cursos
+└── cadastro/                         # App responsável pelos cadastros
     ├── __init__.py
     ├── admin.py                      # Registro e configuração de AlunoAdmin e CursoAdmin
     ├── apps.py                       # Configuração do app (CadastroConfig)
-    ├── models.py                     # Models Curso e Aluno (ManyToManyField)
-    ├── views.py                      # Views listar_alunos e listar_cursos
-    ├── urls.py                       # Rotas /alunos/ e /cursos/
+    ├── forms.py                      # ProdutoForm (ModelForm para o modelo Produto)
+    ├── models.py                     # Models Curso, Aluno (ManyToMany) e Produto
+    ├── views.py                      # Views listar_alunos, listar_cursos, listar_produtos e produto_new
+    ├── urls.py                       # Rotas /alunos/, /cursos/, /produtos/ e /produtos/novo/
     ├── tests.py                      # Arquivo de testes do app
     ├── migrations/
     │   ├── __init__.py
-    │   └── 0001_initial.py           # Migração inicial criando tabelas Curso e Aluno
+    │   ├── 0001_initial.py           # Migração inicial (Curso e Aluno)
+    │   └── 0002_produto.py           # Migração da EA 2 (Produto)
     └── templates/
+        ├── base.html                 # Template base com bloco {% block content %} e barra de navegação
         └── cadastro/
-            ├── base.html             # Layout base com barra de navegação e estilos
             ├── alunos.html           # Listagem de alunos e seus respectivos cursos
-            └── cursos.html           # Listagem de cursos e seus respectivos alunos
+            ├── cursos.html           # Listagem de cursos e seus respectivos alunos
+            ├── produtos.html         # Listagem de produtos cadastrados
+            └── produto_form.html     # Formulário de cadastro de produto (com {% csrf_token %})
 ```
 
 ---
@@ -45,19 +51,19 @@ E.A1/
 O projeto segue o padrão **MVT (Model-View-Template)** do Django:
 
 ```text
-Navegador (/alunos/ ou /cursos/)
+Navegador (/alunos/, /cursos/, /produtos/ ou /produtos/novo/)
    │
    ▼
 escola/urls.py ──► cadastro/urls.py
                       │
                       ▼
-               cadastro/views.py (listar_alunos / listar_cursos)
-                      │  (consulta com prefetch_related)
+               cadastro/views.py (listar_alunos / listar_cursos / listar_produtos / produto_new)
+                      │  (GET exibe formulário ou lista; POST valida ProdutoForm e salva)
                       ▼
-               cadastro/models.py (Aluno / Curso no SQLite)
+               cadastro/models.py (Aluno / Curso / Produto no SQLite)
                       │
                       ▼
-               cadastro/templates/cadastro/*.html (herdam de base.html)
+               cadastro/templates/cadastro/*.html (herdam de templates/base.html)
 ```
 
 ---
@@ -77,11 +83,19 @@ erDiagram
         string titulo
         text descricao
     }
+    PRODUTO {
+        int id PK
+        string nome
+        text descricao
+        decimal preco
+        date validade
+    }
     ALUNO }o--o{ CURSO : "cursos (related_name='alunos')"
 ```
 
 - **`Curso`**: `titulo` (`CharField`, máx. 150 caracteres) e `descricao` (`TextField`).
 - **`Aluno`**: `nome` (`CharField`, máx. 100), `sobrenome` (`CharField`, máx. 100), `email` (`EmailField`, único) e `cursos` (`ManyToManyField(Curso, related_name='alunos', blank=True)`).
+- **`Produto` (EA 2)**: `nome` (`CharField`, máx. 150), `descricao` (`TextField`), `preco` (`DecimalField(10, 2)`) e `validade` (`DateField`).
 
 ---
 
@@ -91,7 +105,9 @@ erDiagram
 | :--- | :--- | :--- | :--- |
 | `/alunos/` | `cadastro.views.listar_alunos` | `listar_alunos` | Lista todos os alunos e os cursos matriculados (`aluno.cursos.all`). |
 | `/cursos/` | `cadastro.views.listar_cursos` | `listar_cursos` | Lista todos os cursos e os alunos matriculados (`curso.alunos.all`). |
-| `/admin/` | `admin.site.urls` | — | Painel administrativo com `AlunoAdmin` e `CursoAdmin` (busca e listagem). |
+| `/produtos/` | `cadastro.views.listar_produtos` | `listar_produtos` | Lista todos os produtos cadastrados. |
+| `/produtos/novo/` | `cadastro.views.produto_new` | `produto_new` | Exibe e processa o `ProdutoForm` (cadastro sem Django Admin). |
+| `/admin/` | `admin.site.urls` | — | Painel administrativo com `AlunoAdmin` e `CursoAdmin`. |
 
 ---
 
@@ -140,7 +156,7 @@ python manage.py check
 python manage.py migrate
 ```
 
-### 5. (Opcional) Criar superusuário para cadastrar dados no Admin
+### 5. (Opcional) Criar superusuário para cadastrar Alunos/Cursos no Admin
 
 ```bash
 python manage.py createsuperuser
@@ -155,4 +171,6 @@ python manage.py runserver
 Acesse no navegador:
 - Alunos: `http://127.0.0.1:8000/alunos/`
 - Cursos: `http://127.0.0.1:8000/cursos/`
+- Produtos: `http://127.0.0.1:8000/produtos/`
+- Cadastrar Produto (sem Admin): `http://127.0.0.1:8000/produtos/novo/`
 - Admin: `http://127.0.0.1:8000/admin/`
