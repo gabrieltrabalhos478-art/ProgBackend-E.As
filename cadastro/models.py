@@ -24,3 +24,15 @@ class Aluno(models.Model):
     def __str__(self):
         # Mostra o nome completo do aluno
         return f"{self.nome} {self.sobrenome}"
+
+
+# Model que representa um produto cadastrado (EA 2)
+class Produto(models.Model):
+    nome = models.CharField(max_length=150)
+    descricao = models.TextField()
+    preco = models.DecimalField(max_digits=10, decimal_places=2)
+    validade = models.DateField()
+
+    def __str__(self):
+        # Mostra o nome do produto
+        return self.nome
