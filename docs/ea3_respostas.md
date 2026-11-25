@@ -62,3 +62,11 @@ Um token JWT tem três partes separadas por ponto (`header.payload.signature`):
 4. **Requisições autenticadas:** Nas próximas chamadas para rotas protegidas (ex.: `GET /api/usuarios/`), o cliente envia o token no cabeçalho HTTP:
    `Authorization: Bearer <seu_token_jwt>`
 5. **Verificação no servidor:** O servidor verifica a assinatura e a validade do token usando a chave secreta. Se for válido, libera o acesso e já sabe quem é o usuário pelo conteúdo do `payload`, sem precisar consultar tabela de sessão.
+
+### Como isso foi implementado neste projeto
+
+No projeto Django, cada etapa acima corresponde diretamente ao que configuramos com o `djangorestframework-simplejwt`:
+
+1. **Login (`POST /api/token/`):** A view `TokenObtainPairView` recebe `username` e `password`, valida o usuário no SQLite e devolve dois tokens: `access` (válido por **5 minutos**) e `refresh` (válido por **1 dia**).
+2. **Requisição protegida (`GET /api/usuarios/`):** A rota está protegida com `permission_classes = [IsAuthenticated]`. Sem token, o DRF bloqueia e retorna erro **401 Unauthorized**. Enviando o cabeçalho `Authorization: Bearer <access>`, o `JWTAuthentication` valida a assinatura e libera o JSON dos usuários.
+3. **Renovação (`POST /api/token/refresh/`):** Quando o `access` expira após 5 minutos, o cliente envia o `refresh` para `TokenRefreshView` e recebe um novo `access` sem precisar digitar a senha novamente.
